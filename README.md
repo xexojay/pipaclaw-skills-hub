@@ -1,0 +1,48 @@
+# pipaclaw-skills-hub
+
+This directory is the public repository boundary for `pipaclaw-skills-hub`.
+
+It should contain only publishable skill packages:
+
+- `SKILL.md`
+- `agents/`
+- `references/`
+
+It should not contain implementation-specific material:
+
+- backend services
+- local runtimes or exporters
+- test scripts
+- sample customer files
+- private assets or reverse-engineered templates
+- `node_modules`, build output, or generated artifacts
+
+Current public skills:
+
+- `social-account-ops`
+- `ppt-maker`
+- `promo-video-maker`
+
+Repository layout:
+
+```text
+pipaclaw-skills-hub/
+├── AGENTS.md
+├── LICENSE
+├── README.md
+├── .gitignore
+├── social-account-ops/
+├── ppt-maker/
+└── promo-video-maker/
+```
+
+Repository rule:
+
+- social account operations are exposed through exactly one public skill: `social-account-ops`
+- diagnosis, planning, writing, and retro are internal phases inside that one skill, not separate public packages
+
+Recommended publish flow:
+
+1. Treat this `skills/` directory as the GitHub repo root.
+2. Keep execution backends in separate private or implementation repos.
+3. Review each skill package for customer data, generated assets, and non-markdown implementation files before release.
