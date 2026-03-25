@@ -74,6 +74,8 @@ Owns:
 
 Gate:
 - each slide must have exactly one job
+- each page job should specify at least: `conclusion`, `support`, `visual role`, and `page recipe`
+- do not mark outline ready if important pages still have no planned evidence or visual support
 
 ### Design Director
 
@@ -82,9 +84,13 @@ Use in `design`.
 Owns:
 - `VisualDirection`
 - `MediaPlan`
+- `LayoutPolicy`
+- `TypographyPolicy`
 
 Gate:
 - style must fit the audience and scene, not just "look good"
+- layout and typography decisions should be resolved internally unless they change meaning or violate explicit brand constraints
+- polished decks should not be approved with a zero-media plan or a single repeated page grammar
 
 ### Deck Designer
 
@@ -95,6 +101,8 @@ Owns:
 
 Gate:
 - no page should carry placeholder content or unplanned assets
+- `Draft` should be good enough to survive internal review before any user-facing reveal
+- do not expose a shallow rough draft just to show progress
 
 ### Review Editor
 
@@ -106,6 +114,7 @@ Owns:
 
 Gate:
 - missing content, distorted assets, weak proof, or language mismatch mean not ready
+- zero-media text-heavy decks, repetitive page rhythm, noisy footer chrome, or async-incomprehensible demo pages mean not ready
 
 ### Export Operator
 
@@ -114,9 +123,12 @@ Use in `export`.
 Owns:
 - `.pptx`
 - preview bundle
+- delivery compatibility profile
+- `wechat-safe-editable.pptx` when needed
 
 Gate:
 - export only after review passes
+- if WeChat is in the delivery path, do not export a single desktop-only file and call the job done
 
 ## Reporting Format
 

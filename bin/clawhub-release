@@ -1,0 +1,255 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PROXY_URL="${CLAWHUB_PROXY_URL:-http://127.0.0.1:7890}"
+SITE_URL="${CLAWHUB_SITE:-https://clawhub.ai}"
+REGISTRY_URL="${CLAWHUB_REGISTRY:-https://clawhub.ai}"
+CLI_JS="${CLAWHUB_CLI_JS:-$HOME/.bun/install/global/node_modules/clawhub/dist/cli.js}"
+HTTP_JS="${CLAWHUB_HTTP_JS:-$HOME/.bun/install/global/node_modules/clawhub/dist/http.js}"
+DEFAULT_SLUG="pipaclaw-skills-hub"
+DEFAULT_NAME="Pipaclaw Skills Hub"
+DEFAULT_TAGS="latest"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  bin/clawhub-release doctor
+  bin/clawhub-release login --token <token>
+  bin/clawhub-release whoami
+  bin/clawhub-release publish --version <semver> [--changelog <text>] [--slug <slug>] [--name <name>] [--tags <tags>]
+
+Environment overrides:
+  CLAWHUB_PROXY_URL   Proxy URL for local network access. Default: http://127.0.0.1:7890
+  CLAWHUB_SITE        ClawHub site URL. Default: https://clawhub.ai
+  CLAWHUB_REGISTRY    ClawHub registry URL. Default: https://clawhub.ai
+  CLAWHUB_CLI_JS      Absolute path to the installed ClawHub CLI entry.
+  CLAWHUB_HTTP_JS     Absolute path to the installed ClawHub HTTP helper.
+  CLAWHUB_TOKEN       Token used by the login command when --token is omitted.
+EOF
+}
+
+fail() {
+  echo "ERROR: $*" >&2
+  exit 1
+}
+
+note() {
+  echo "==> $*"
+}
+
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || fail "Missing required command: $1"
+}
+
+verify_repo_root() {
+  [ -f "$ROOT_DIR/SKILL.md" ] || fail "Repository root missing SKILL.md: $ROOT_DIR"
+  [ -d "$ROOT_DIR/agents" ] || fail "Repository root missing agents/: $ROOT_DIR"
+}
+
+verify_local_tools() {
+  need_cmd bun
+  need_cmd curl
+  need_cmd python3
+  [ -f "$CLI_JS" ] || fail "ClawHub CLI entry not found: $CLI_JS"
+  [ -f "$HTTP_JS" ] || fail "ClawHub HTTP helper not found: $HTTP_JS"
+}
+
+verify_proxy() {
+  curl -fsSI --max-time 20 -x "$PROXY_URL" "$SITE_URL" >/dev/null || fail "Cannot reach $SITE_URL through proxy $PROXY_URL"
+}
+
+patch_clawhub_http() {
+  python3 - "$HTTP_JS" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+original = text
+
+if "await mkdir(dirname(filePath), { recursive: true });" in text:
+    sys.exit(0)
+
+fs_old = "import { mkdtemp, rm, writeFile } from 'node:fs/promises';"
+fs_new = "import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';"
+path_old = "import { join } from 'node:path';"
+path_new = "import { dirname, join } from 'node:path';"
+needle = "                const filePath = join(tempDir, filename);\n"
+insert = "                const filePath = join(tempDir, filename);\n                await mkdir(dirname(filePath), { recursive: true });\n"
+
+if fs_old in text and fs_new not in text:
+    text = text.replace(fs_old, fs_new, 1)
+if path_old in text and path_new not in text:
+    text = text.replace(path_old, path_new, 1)
+if needle in text and "await mkdir(dirname(filePath), { recursive: true });" not in text:
+    text = text.replace(needle, insert, 1)
+
+if text == original:
+    raise SystemExit("Unable to apply local ClawHub nested-upload patch automatically")
+
+path.write_text(text)
+PY
+}
+
+ensure_clawhub_patch() {
+  if grep -q "await mkdir(dirname(filePath), { recursive: true });" "$HTTP_JS"; then
+    note "ClawHub nested-upload patch already present"
+    return
+  fi
+  note "Applying local ClawHub nested-upload patch"
+  patch_clawhub_http
+}
+
+run_clawhub() {
+  (
+    cd "$ROOT_DIR"
+    HTTPS_PROXY="$PROXY_URL" \
+    HTTP_PROXY="$PROXY_URL" \
+    CLAWHUB_SITE="$SITE_URL" \
+    CLAWHUB_REGISTRY="$REGISTRY_URL" \
+    bun "$CLI_JS" "$@"
+  )
+}
+
+cmd_doctor() {
+  verify_repo_root
+  verify_local_tools
+  verify_proxy
+  ensure_clawhub_patch
+  note "Running authenticated identity check if available"
+  if run_clawhub whoami; then
+    note "Doctor check passed"
+  else
+    note "No stored ClawHub login found yet"
+  fi
+}
+
+cmd_login() {
+  local token="${CLAWHUB_TOKEN:-}"
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --token)
+        [ "$#" -ge 2 ] || fail "--token requires a value"
+        token="$2"
+        shift 2
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      *)
+        fail "Unknown login argument: $1"
+        ;;
+    esac
+  done
+
+  [ -n "$token" ] || fail "Token required. Pass --token <token> or set CLAWHUB_TOKEN"
+
+  verify_repo_root
+  verify_local_tools
+  verify_proxy
+  ensure_clawhub_patch
+
+  run_clawhub login --token "$token" --no-browser
+  run_clawhub whoami
+}
+
+cmd_whoami() {
+  verify_repo_root
+  verify_local_tools
+  verify_proxy
+  ensure_clawhub_patch
+  run_clawhub whoami
+}
+
+cmd_publish() {
+  local version=""
+  local changelog=""
+  local slug="$DEFAULT_SLUG"
+  local name="$DEFAULT_NAME"
+  local tags="$DEFAULT_TAGS"
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --version)
+        [ "$#" -ge 2 ] || fail "--version requires a value"
+        version="$2"
+        shift 2
+        ;;
+      --changelog)
+        [ "$#" -ge 2 ] || fail "--changelog requires a value"
+        changelog="$2"
+        shift 2
+        ;;
+      --slug)
+        [ "$#" -ge 2 ] || fail "--slug requires a value"
+        slug="$2"
+        shift 2
+        ;;
+      --name)
+        [ "$#" -ge 2 ] || fail "--name requires a value"
+        name="$2"
+        shift 2
+        ;;
+      --tags)
+        [ "$#" -ge 2 ] || fail "--tags requires a value"
+        tags="$2"
+        shift 2
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      *)
+        fail "Unknown publish argument: $1"
+        ;;
+    esac
+  done
+
+  [ -n "$version" ] || fail "--version is required"
+
+  verify_repo_root
+  verify_local_tools
+  verify_proxy
+  ensure_clawhub_patch
+  run_clawhub whoami >/dev/null
+
+  if [ -n "$changelog" ]; then
+    run_clawhub publish . --slug "$slug" --name "$name" --version "$version" --tags "$tags" --changelog "$changelog"
+  else
+    run_clawhub publish . --slug "$slug" --name "$name" --version "$version" --tags "$tags"
+  fi
+}
+
+main() {
+  local command="${1:-}"
+  case "$command" in
+    doctor)
+      shift
+      cmd_doctor "$@"
+      ;;
+    login)
+      shift
+      cmd_login "$@"
+      ;;
+    whoami)
+      shift
+      cmd_whoami "$@"
+      ;;
+    publish)
+      shift
+      cmd_publish "$@"
+      ;;
+    ""|-h|--help|help)
+      usage
+      ;;
+    *)
+      fail "Unknown command: $command"
+      ;;
+  esac
+}
+
+main "$@"

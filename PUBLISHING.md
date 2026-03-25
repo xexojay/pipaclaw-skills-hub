@@ -57,18 +57,29 @@ The published `clawhub` CLI currently has a Node-path proxy issue:
 
 Use the Bun entry directly for login and publish.
 
+## One Command Entry
+
+Use the helper script in this repository:
+
+```bash
+cd /Users/xiexiongjie/code/skills-hub/skills
+bin/clawhub-release doctor
+```
+
+That script handles:
+
+- proxy validation
+- local ClawHub CLI patch verification
+- Bun-based execution
+- auth check
+
 ## Login
 
 ```bash
 cd /Users/xiexiongjie/code/skills-hub/skills
 
-HTTPS_PROXY=http://127.0.0.1:7890 \
-HTTP_PROXY=http://127.0.0.1:7890 \
-bun /Users/xiexiongjie/.bun/install/global/node_modules/clawhub/dist/cli.js login --token '<TOKEN>' --no-browser
-
-HTTPS_PROXY=http://127.0.0.1:7890 \
-HTTP_PROXY=http://127.0.0.1:7890 \
-bun /Users/xiexiongjie/.bun/install/global/node_modules/clawhub/dist/cli.js whoami
+bin/clawhub-release login --token '<TOKEN>'
+bin/clawhub-release whoami
 ```
 
 Expected result:
@@ -81,13 +92,7 @@ Expected result:
 ```bash
 cd /Users/xiexiongjie/code/skills-hub/skills
 
-HTTPS_PROXY=http://127.0.0.1:7890 \
-HTTP_PROXY=http://127.0.0.1:7890 \
-bun /Users/xiexiongjie/.bun/install/global/node_modules/clawhub/dist/cli.js publish . \
-  --slug pipaclaw-skills-hub \
-  --name 'Pipaclaw Skills Hub' \
-  --version 0.1.0 \
-  --tags latest
+bin/clawhub-release publish --version 0.1.0
 ```
 
 ## Update Publish
@@ -97,15 +102,12 @@ For the next release, only change the version:
 ```bash
 cd /Users/xiexiongjie/code/skills-hub/skills
 
-HTTPS_PROXY=http://127.0.0.1:7890 \
-HTTP_PROXY=http://127.0.0.1:7890 \
-bun /Users/xiexiongjie/.bun/install/global/node_modules/clawhub/dist/cli.js publish . \
-  --slug pipaclaw-skills-hub \
-  --name 'Pipaclaw Skills Hub' \
+bin/clawhub-release publish \
   --version 0.1.1 \
-  --tags latest \
   --changelog 'Refined public hub routing and skill package documentation.'
 ```
+
+Change note wording can come from [RELEASE_NOTES_TEMPLATE.md](/Users/xiexiongjie/code/skills-hub/skills/RELEASE_NOTES_TEMPLATE.md).
 
 ## If Publish Fails
 
@@ -129,17 +131,7 @@ curl -I -x http://127.0.0.1:7890 https://clawhub.ai
 Cause:
 - the local `clawhub` install may still contain the nested-upload bug
 
-Current local fix already applied on this machine:
-
-- [http.js](/Users/xiexiongjie/.bun/install/global/node_modules/clawhub/dist/http.js)
-
-If the package is reinstalled and the bug returns, patch this block in the Bun/Node global install:
-
-```js
-const filePath = join(tempDir, filename);
-await mkdir(dirname(filePath), { recursive: true });
-await writeFile(filePath, bytes);
-```
+The repository helper script auto-applies the required local patch when missing.
 
 ### `Not logged in`
 
@@ -155,4 +147,3 @@ Fix:
 
 - slug: `pipaclaw-skills-hub`
 - first published version: `0.1.0`
-

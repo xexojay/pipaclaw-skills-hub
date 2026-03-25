@@ -51,3 +51,4 @@ Recommended publish flow:
 2. Keep execution backends in separate private or implementation repos.
 3. Review each skill package for customer data, generated assets, and non-markdown implementation files before release.
 4. Follow [PUBLISHING.md](/Users/xiexiongjie/code/skills-hub/skills/PUBLISHING.md) for login, version bumps, proxy handling, and ClawHub publish commands.
+5. Use [bin/clawhub-release](/Users/xiexiongjie/code/skills-hub/skills/bin/clawhub-release) as the standard release entrypoint.

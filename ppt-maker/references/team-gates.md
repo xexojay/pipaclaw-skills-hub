@@ -31,11 +31,14 @@ No stage may hand off with `ready=false`.
 - `Draft` starts only when outline and evidence gates pass.
 - `Review` can request targeted rework to any upstream stage.
 
+`Draft` is an internal production stage, not a mandatory user checkpoint.
+
 ## Rework Policy
 
 - If issue is factual, send back to `Evidence`.
 - If issue is narrative coherence, send back to `Story` or `Outline`.
 - If issue is visual/readability, send back to `Design` or `Draft`.
+- If issue is delivery-surface compatibility, send back to `Design` or `Export`.
 - If issue is missing mandatory input, return to `Intake`.
 
 ## User-Facing Progress Card
@@ -49,3 +52,12 @@ During execution, expose:
 - `Next ETA`
 
 This keeps one-skill UX while preserving team-like transparency.
+
+## User Reveal Principle
+
+- Progress should be visible, but internal uncertainty should stay internal.
+- Do not ask the user to arbitrate normal design execution choices.
+- Do not send a rough initial deck when the team already knows it is not good enough.
+- The first substantial artifact the user sees should usually be either:
+  - a reviewed outline that is decision-ready, or
+  - a reviewed near-final deck that is presentable

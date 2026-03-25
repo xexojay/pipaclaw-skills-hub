@@ -52,17 +52,30 @@ Ask only the minimum questions that materially change the deck:
 - who the audience is
 - what the usage scene is: meeting, roadshow, async send, keynote, bid, training
 - what source materials already exist
+- where the file will actually be opened and edited: desktop office, WeChat, or both
+
+Do not ask the user to choose design-internal variables unless there is a real brand or delivery conflict:
+- page layout family
+- card density
+- palette nuances
+- typography pairing
+- visual rhythm or section pacing
+
+Those are internal team decisions. The user should only be pulled in when the choice would materially change meaning, brand compliance, or delivery compatibility.
 
 Before leaving intake, also capture the highest-impact polish constraints when relevant:
 - preferred style or template reference, including template-library preference such as iSlide
 - header / footer / page-number policy
 - citation policy for evidence-heavy decks
 - must-include sections and must-avoid elements
+- delivery target and editing surface: `desktop-editable`, `wechat-editable-safe`, or `both`
 
 If materials are fragmented, ask for one zip bundle. Read `references/material-bundle.md`.
 Read `references/input-boundary-contract.md` before changing intake rules.
+Read `references/delivery-compatibility.md` before locking export assumptions.
 
 If the user refuses more questions, make the smallest explicit assumptions and continue. Do not hide the assumptions.
+Default to making reasonable deck-design assumptions rather than turning design work into a questionnaire.
 
 ## Internal Workers
 
@@ -119,6 +132,8 @@ When reporting progress to the user, speak in terms of stage ownership:
 - what artifact was just completed
 - what will happen next
 
+Do not expose internal worker uncertainty as user homework. If the team is debating layout, page rhythm, or style variants inside a stable brief, resolve it internally.
+
 Read `references/team-gates.md` before changing stage ownership, readiness rules, or rework routing.
 
 ## Template Intelligence
@@ -128,6 +143,7 @@ Do not design from scratch when the deck clearly belongs to a familiar business 
 The `Design Director` should:
 - read `references/template-family-recipes.md`
 - read `references/template-library-architecture.md`
+- read `references/typography-and-font-safety.md`
 - identify the closest template family
 - explain why that family fits the scene
 - then choose a palette recipe from `references/color-system-playbook.md`
@@ -139,8 +155,17 @@ At minimum, the design stage should resolve:
 - `template family`
 - `palette recipe`
 - `theme key`
+- `delivery compatibility profile`
 
 If the user provides a reference PPT, template screenshot, or template-library preference such as iSlide, infer the family from that material before laying out pages.
+
+If the user will open or forward the deck inside WeChat, the `Design Director` must explicitly switch into a WeChat-safe editable profile:
+- keep text editable
+- keep tables editable
+- keep simple charts editable
+- avoid fragile default font choices
+- rasterize only decorative layers when needed
+- avoid layouts that become visually blank if text rendering degrades
 
 ## Public Package Boundary
 
@@ -172,15 +197,31 @@ For final delivery, the workflow should prefer:
 - browser preview as a separate preview link when available
 - explicit status reporting for the current stage, owner, gate, and next action
 
+The default user-facing path should not show a low-value rough draft.
+Prefer this reveal sequence:
+- reviewed intake summary when core facts are still unclear
+- reviewed outline when the story or fact basis needs confirmation
+- reviewed near-final deck when the team can already stand behind the page logic and visuals
+
+If the user needs editing and WeChat is part of the actual delivery path, the workflow should default to two editable exports:
+- `full-fidelity.pptx`
+- `wechat-safe-editable.pptx`
+
+The WeChat-safe file is not a PDF fallback. It must remain editable.
+
 ## Guardrails
 
 - Do not act like a one-shot slide generator when intake is incomplete.
 - Do not force the user to choose internal worker names.
 - Do not keep status vague. Always name the current stage and the current owner.
 - Do not let downstream stages hide upstream gaps. Missing audience is a Producer problem, weak proof is a Research problem, overloaded slides are a Slide Architect problem.
+- Do not turn layout, palette, or typography into unnecessary user decisions.
+- Do not surface shallow "first draft" output unless the user explicitly asked for a rough draft.
 - Do not use an image model as a shortcut for real charts, tables, or editable diagrams.
 - Do not invent business-critical facts without labeling them as assumptions and routing them through a fact lock.
 - If the user asks for a final file, only export after the review gate passes.
+- Do not assume a desktop-safe `.pptx` is automatically WeChat-safe.
+- Do not ship a WeChat-targeted deck with fragile default fonts or text-only pages that would appear blank if the local viewer drops text rendering.
 
 ## References
 
@@ -196,4 +237,6 @@ For final delivery, the workflow should prefer:
 - Read `references/template-family-recipes.md` to map the deck into a recognizable template family instead of improvising every page.
 - Read `references/template-library-architecture.md` to keep provider, family, page-recipe, and rendering responsibilities separated.
 - Read `references/color-system-playbook.md` to choose a palette recipe and chart color policy.
+- Read `references/typography-and-font-safety.md` before locking Chinese/English font policy or WeChat-safe text rendering assumptions.
 - Read `references/slide-quality-checklist.md` before finalizing a deck or revising one.
+- Read `references/delivery-compatibility.md` before promising export behavior for desktop, WeChat, or mixed delivery paths.
